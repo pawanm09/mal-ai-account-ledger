@@ -56,6 +56,7 @@ the table in `README.md`. They identify the scenario, not configurable threshold
 | Interest multiplication precision: balance coefficient digits + rate coefficient digits | Multiplication needs at most the sum of operand digit counts before explicit currency rounding. Halving it risks rounding the intermediate product first. |
 | Closed-day sentinel 0 | No day closed yet; actual days remain 1 through 6. This is a state boundary, not a financial input. |
 | Reconciliation scans at most six days | The supplied window is tiny; scanning avoids an invalidation cache and catches fee effects on later days. Three days would miss required history. |
+| Script-test timeout: 10 seconds | A test-only hang guard for a subsecond in-memory command, with interpreter startup headroom. Five seconds would probably work but is less tolerant of a busy machine. It does not delay execution or affect financial behavior. |
 
 The money helpers use local Decimal contexts, preserving the caller's context.
 Precision is calculated from the operands; no arbitrary monetary maximum has

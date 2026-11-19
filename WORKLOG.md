@@ -152,3 +152,31 @@ Git commit. AI-generated code is not evidence that the author has reviewed it.
   tests from the still-pending runnable reporting script.
 - No implementation approach abandoned and no commits performed. Step 6 awaits
   the author's review and commit confirmation.
+
+## Step 6: supplied replay and daily reports
+
+### 2026-11-19T09:12:52Z — Implementation start
+
+- Author confirmed Step 5 committed; verified commit `6788e61`.
+- `.idea/` remains untracked user configuration and is untouched.
+- Replacing the main/container module-description placeholders with runnable
+  event replay functions and explicit fresh dependency construction.
+
+### 2026-11-19T09:14:04Z — Verification checkpoint
+
+- Added create_ledger factory, ten supplied input events in original order,
+  per-day output, original-close cutoff recovery, correction checkpoints, final
+  restated reports, and account totals. No persistent or global ledger state.
+- Added six end-to-end/reporting tests, including subprocess invocation of main.py
+  and repeated runs checking identical output and independent underlying clients.
+- `.venv/bin/python -m pytest tests/src tests/test_replay.py -q`: 178 passed in
+  0.29 seconds.
+- `.venv/bin/python main.py`: successful real replay with six original closes,
+  corrections after E7/E9/E10, six final day views, and totals AED 390.93/BHD 10.008.
+- Output showed Auth-A approved at the original Day 2 cutoff and settled at later
+  correction cutoffs. E6 rejection and E8 decline are visible with recording sequence.
+- `git diff --check`: passed for tracked changes at this checkpoint.
+- Updated README run commands and output interpretation; recorded the script-test
+  timeout in NUMBERS.md. Intentional failing test is still scheduled for Step 7.
+- No implementation approach abandoned, no commits performed. Awaiting the author's
+  review and commit confirmation before Step 7.

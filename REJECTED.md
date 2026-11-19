@@ -1,9 +1,12 @@
 # Acceptance review and rejected approaches
 
-Implementation through Step 5 now verifies the financial scenario and policies.
+Implementation through Step 6 verifies the financial scenario, policies, and output.
 Distinguish contradictions in arithmetic from decisions under an ambiguous policy.
 
 ## Current evidence
+
+- `tests/test_replay.py` executes the real `main.py` command, checks all daily
+  reporting fields, preserves E10 after E9, and verifies both final balances.
 
 - `tests/src/services/test_daily_close_service.py` verifies the pre-fee Day 2
   amount, fee days 2/4/5, retained fees after E9, Auth-A/unknown-settlement outcomes,

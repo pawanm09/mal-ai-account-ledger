@@ -5,12 +5,9 @@ database, or external service calls. Financial state will live only in memory.
 
 ## Current status
 
-Step 5: the ledger, authorizations, daily closing, historical fees, interest, and
-finalization are implemented, with 172 passing tests. Tests exercise the complete
-supplied event stream. The runnable reporting script and deliberate failing test
-are still pending.
-`main.py` and `src/container.py` currently contain module descriptions only;
-running `main.py` does not exercise the supplied event stream.
+Step 6: the complete supplied replay and daily reporting run with `python3 main.py`.
+All 178 correctness tests pass, including a subprocess test of that command.
+The deliberate failing test and final documentation review remain for Step 7.
 
 ## Setup
 
@@ -28,27 +25,28 @@ python3 -c "import main, src.container, src.models, src.services, src.exceptions
 Run the currently implemented behavioral tests:
 
 ```bash
-python3 -m pytest tests/src -q
+python3 -m pytest tests/src tests/test_replay.py -q
 ```
 
 These tests cover exact money, immutable records, independent account balances,
 recording cutoffs, batch validation, transaction acceptance/rejection, duplicate
-attempts, instalment conservation, and reversals. End-to-end behavior will be
-tested when the remaining services and replay are implemented.
+attempts, instalment conservation, reversals, holds, fees, interest, and finalization.
+Replay tests verify arrival order, financial totals, all daily output fields,
+original-versus-corrected views, and repeatability with isolated in-memory state.
 
 ## Structure
 
 The layout follows `/Users/pawan.mishra/Downloads/pendency-system-design-main`:
 
 ```text
-main.py                         supplied events, replay, and output (Step 6)
+main.py                         supplied events, replay, and output
 src/container.py                explicit dependency construction
 src/models/                    immutable records and exact-money helpers
 src/exceptions/                domain validation exception
 src/externals/clients/         in-memory append/query storage
 src/services/                 ledger operations and daily closing
 tests/src/                    tests mirroring the source packages
-tests/test_replay.py           whole-stream test (Step 6)
+tests/test_replay.py           whole-stream and runnable-script tests
 tests/design_limitations/      deliberate failing test (Step 7)
 ```
 
@@ -185,25 +183,45 @@ Timing interpretations and unsupported cases are explicit in `AMBIGUITIES.md`.
 
 E10 remains after E9. The processing clock does not move backward.
 
-## Planned commands and output (available after Steps 6 and 7)
+## Run the replay and correctness suite
 
 ```bash
 python3 main.py
 python3 -m pytest tests/src tests/test_replay.py
-python3 -m pytest tests/design_limitations
-python3 -m pytest
 ```
 
-The first test command will run the passing correctness suite. The limitation
-command will intentionally fail; the full suite will include that failure too.
-The failure and its meaning will be annotated in the test and documented here.
+The deliberate failure will be added in Step 7. Its separate command will be
+`python3 -m pytest tests/design_limitations`; default full discovery will include
+it as well. At Step 6 there is no deliberately failing test yet.
 
-Replay output will show each day's account balances, fees, authorization states,
-holds, available balance, errors, and interest. Reports will label their recording
-cutoff and distinguish original snapshots from historical corrections and final
-restated balances. No silent replacement of earlier reports.
+### Read the output
 
-## Verified financial results (Step 5 tests)
+- `ARRIVAL`: each supplied event's booked day, value date, and decision. E10
+  appears after E9. The runner uses a fresh ledger on every invocation.
+- `ORIGINAL CLOSE`: reconstructs the snapshot at the DAY_CLOSED journal marker,
+  before any later arrival changes historical balances. Day 6's original close
+  is explicitly the pre-capitalization snapshot; the final row includes interest.
+- `CORRECTION AFTER E7/E9/E10`: shows affected already-closed days at the new
+  recording cutoff. No original snapshot is overwritten.
+- `FINAL RESTATED`: all six value-dated closing balances at the final cutoff.
+  Holds and authorization states are as known at that cutoff, not a claim that
+  those states existed on the earlier value day. Use ORIGINAL CLOSE for the
+  original authorization state; for example, Auth-A was APPROVED on Day 2.
+- `Fees assessed this day`: fees effective on the row's day, with the sequence
+  at which they were recorded. A retained fee can appear on a now-positive day.
+- `Errors booked/assessed this day`: rejected/declined requests grouped by booked
+  day; fee-policy errors grouped by assessment day. Each includes its recording
+  sequence. `none` is printed when no error exists, including for ACC-002 here.
+- `Rounded daily interest`: calculated from the balance excluding capitalization.
+  Original and correction reports are provisional; final reports reconcile to
+  the posted interest credits.
+- `WINDOW TOTALS`: assessed fee total, actual capitalized amount, and final balance
+  for each account, always formatted to its currency precision.
+
+Each day view prints both accounts. Journal sequence counts include inputs,
+postings, decisions, and control markers; they are not input event numbers.
+
+## Verified financial results (core tests and runnable replay)
 
 Under the policies chosen in `AMBIGUITIES.md`:
 
