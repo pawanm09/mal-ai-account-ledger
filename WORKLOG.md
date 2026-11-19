@@ -95,3 +95,31 @@ Git commit. AI-generated code is not evidence that the author has reviewed it.
 - Updating policy documentation for minimum-size instalments, original-date full
   reversal, and ordinary debits being allowed to overdraw.
 - No code approach was abandoned during this step. No commits performed.
+
+## Step 4: authorizations and settlements
+
+### 2026-11-19T08:30:18Z — Implementation start
+
+- Author confirmed Step 3 committed; verified commit `2ba335a`.
+- `.idea/` remains the only untracked user directory from before this step.
+- Extending LedgerService with journal-derived authorization states, active holds,
+  available balances, and final settlement validation.
+
+### 2026-11-19T08:31:41Z — Code verification checkpoint
+
+- Added immutable AuthorizationModel snapshots rebuilt from original input and
+  outcome records. No original authorization event or decision is mutated.
+- APPROVED holds reserve money; DECLINED requests do not. Successful final
+  settlements append a debit plus SETTLED decision, releasing the whole hold.
+- Unknown, declined, duplicate, wrong-account, and over-limit settlements reject
+  without money movement. Failed attempts retain their authorization reference.
+- Availability uses the latest valid booked day seen, so late authorizations
+  cannot bypass later debits by using an earlier positive ledger balance.
+- Added tests for exact-zero boundary, one-minor-unit excess, multiple holds,
+  account-scoped IDs, no expiry, historical cutoff state, post-approval overdraft,
+  immutable decisions after reversal, duplicate outcomes, and BHD precision.
+- `.venv/bin/python -m pytest tests/src -q`: 151 passed in 0.16 seconds.
+- `git diff --check`: passed for tracked changes at this checkpoint.
+- Updated README and AMBIGUITIES with implemented lifecycle and ID reuse policy.
+- No implementation approach abandoned, no commits performed. Step 5 awaits
+  the author's review and commit confirmation.

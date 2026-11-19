@@ -5,9 +5,9 @@ database, or external service calls. Financial state will live only in memory.
 
 ## Current status
 
-Step 3: exact money, immutable records, append-only storage, historical queries,
-credits, debits, instalments, and full reversals are implemented, with 112 passing
-tests. Authorizations, settlements, fees, interest, and replay are still pending.
+Step 4: exact money, immutable records, append-only storage, historical queries,
+postings, reversals, authorizations, and settlements are implemented, with 151
+passing tests. Daily closing, fees, interest, and the supplied replay are pending.
 `main.py` and `src/container.py` currently contain module descriptions only;
 running `main.py` does not exercise the supplied event stream.
 
@@ -84,7 +84,9 @@ private Python attributes are not a security boundary against hostile callers.
 ### Implemented transaction flow
 
 `LedgerService.process_event` records each input attempt, validates it, builds
-the entire posting batch, appends that batch, and records an ACCEPTED decision.
+the entire posting batch, appends that batch, and records an ACCEPTED decision
+(SETTLED for a successful settlement). Authorizations append an APPROVED or
+DECLINED decision without financial postings.
 Domain validation failures instead append a REJECTED decision with no postings.
 Unexpected programming errors propagate rather than being hidden as rejections.
 
@@ -92,7 +94,31 @@ Credits may allocate instalments; debits may overdraw. A reversal derives the
 full amount from the referenced credit/debit postings and appends one opposite
 posting linked by `reference_event_id`. Original records and decisions remain.
 Duplicate IDs (including previously rejected IDs) and repeated reversals are
-rejected. The service currently supports CREDIT, DEBIT, and REVERSAL only.
+rejected. The service supports CREDIT, DEBIT, REVERSAL, AUTHORIZATION, and SETTLEMENT.
+
+### Authorization lifecycle
+
+```text
+New valid authorization request
+    +-- enough available balance --> APPROVED (active hold)
+    |                                   |
+    |                                   +-- final settlement --> SETTLED (no hold)
+    +-- insufficient balance ------> DECLINED (no hold)
+
+Malformed / duplicate requests --> REJECTED audit decision; no state change
+```
+
+`get_authorizations` rebuilds immutable snapshots from input and decision records.
+`get_active_holds` sums only APPROVED amounts. `get_available_balance` subtracts
+those holds from the ledger balance at the requested day and journal cutoff.
+To reproduce a historical view, supply both its day and its original cutoff;
+omitting the cutoff intentionally uses all currently known decisions.
+
+Auth-A's AED 185 settlement releases the full AED 200 hold, leaving no implicit
+AED 15 hold. Unknown, declined, already-settled, or over-limit settlements are
+rejected. Approved holds do not expire automatically. Backdated postings do not
+rewrite past approvals or declines. Partial captures remain a documented design
+limitation; the explicit failing demonstration will be added in Step 7.
 
 ## Required accounts and rules
 

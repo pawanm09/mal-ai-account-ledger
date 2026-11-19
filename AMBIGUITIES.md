@@ -67,6 +67,25 @@ E9 does not retroactively approve Auth-B. The authorization availability query
 uses the current processing day and current known entries, not a historical
 value date to bypass a current lack of funds.
 
+Step 4 detail: an authorization ID is reserved for its account once it receives
+an APPROVED or DECLINED decision and cannot be reused after settlement or decline.
+A malformed/rejected authorization creates no lifecycle state; a corrected
+request may use the same authorization ID with a new event ID. The original
+event ID remains reserved. Unknown settlement errors do not create an authorization.
+
+Until explicit close coordination is introduced, the latest valid booked day in
+the input journal establishes the authorization processing day. Out-of-window
+days do not advance it; a rejected request with a valid booked day does. Late
+arrivals never move the processing day backward. Day-plus-cutoff queries are
+historical views; a past day queried without a cutoff uses today's known holds.
+
+Settlement does not recheck current available funds for an already-approved hold.
+It may therefore post after unrelated debits make the account negative. It must
+still be positive, not exceed the original hold, and reference an active approval
+on the same account. Backdated settlement value dates are permitted by the common
+date rules; the hold is released only when the settlement is recorded, never
+retroactively. Reversing a settlement lifecycle is explicitly unsupported.
+
 ## 9. Interest correction and storage
 
 Daily accruals are derived, rounded calculations, not spendable postings. Recompute
