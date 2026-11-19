@@ -1,0 +1,2 @@
+# Test dependency only; the ledger will use the Python standard library.
+pytest==8.3.5
