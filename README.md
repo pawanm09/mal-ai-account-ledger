@@ -5,9 +5,11 @@ database, or external service calls. Financial state will live only in memory.
 
 ## Current status
 
-Step 1: package skeleton and design documentation. Ledger behavior, replay output,
-and tests are not implemented yet. `main.py` and `src/container.py` currently
-contain module descriptions only; running `main.py` does not exercise a ledger.
+Step 2: exact-money helpers, immutable records, append-only storage, and historical
+balance queries are implemented and covered by 64 passing tests. Transaction
+services and replay are not implemented yet. `main.py` and `src/container.py`
+currently contain module descriptions only; running `main.py` does not exercise
+the supplied event stream.
 
 ## Setup
 
@@ -22,8 +24,15 @@ python3 -m pytest --version
 python3 -c "import main, src.container, src.models, src.services, src.exceptions, src.externals.clients, tests.src.models, tests.src.services, tests.src.externals.clients, tests.design_limitations; print('Package imports OK')"
 ```
 
-There are no tests in Step 1. Pytest's `no tests collected` result is not a passing
-correctness suite. Behavioral tests will arrive with their implementation steps.
+Run the currently implemented behavioral tests:
+
+```bash
+python3 -m pytest tests/src -q
+```
+
+These tests cover exact money, immutable records, independent account balances,
+recording cutoffs, and all-or-nothing batch validation. End-to-end behavior will
+be tested when the services and replay are implemented.
 
 ## Structure
 
@@ -45,6 +54,31 @@ tests/design_limitations/      deliberate failing test (Step 7)
 client, not a network integration. There will be two services, `LedgerService`
 and `DailyCloseService`, wired by constructors. Ordinary functions in `main.py`
 will coordinate the replay. Tests will use real in-memory clients.
+
+### Implemented storage model
+
+```text
+EventModel    (original input attempt) --+
+EntryModel    (signed money posting) ---+--> JournalRecord(sequence, payload)
+DecisionModel (outcome or error) -------+         |
+                                                v
+                                     private append-only list
+                                                |
+                                                v
+                                       tuple query snapshots
+```
+
+Account records hold immutable opening balances. Each journal append gets a
+sequence, including errors and decisions. A cutoff is an inclusive **journal
+sequence**, not an event number or booked day. Cutoff zero includes opening
+balances only. Balance queries include only financial postings whose value date
+is on or before the requested day and whose sequence is within the cutoff.
+
+`append_entries` validates the complete batch before writing any postings. The
+data client validates storage invariants, not business authorization or duplicate
+effects; those checks belong to the upcoming service. It intentionally retains
+duplicate input attempts for audit. Public snapshots cannot mutate storage; the
+private Python attributes are not a security boundary against hostile callers.
 
 ## Required accounts and rules
 

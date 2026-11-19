@@ -48,7 +48,15 @@ the table in `README.md`. They identify the scenario, not configurable threshold
 | One-based monotonically increasing recording sequence | Deterministic arrival cutoffs, independent of wall-clock time. Sequence magnitude has no monetary meaning. |
 | One final settlement per authorization | Small lifecycle matching the supplied stream. Multiple partial captures are a documented limitation, not silently approximated. |
 | One final capitalization per account | Matches a single end-of-window credit per currency account; halving an operation count is meaningless. No posting is needed for a zero total. |
+| Cutoff zero | Query opening balances before any journal records. Negative cutoffs are invalid; this is an identity boundary, not a tunable constant. |
+| Quantization precision: integer digits + currency scale + one carry digit | Derived per calculation rather than relying on Decimal's default significant-digit limit. The extra digit permits 99.999 to become 100.00. Halving precision can lose money or raise an arithmetic error. |
+| Sum precision: largest integer width + scale + digits in count | Derived headroom for summing the batch without dropping minor units. At least one integer digit handles zero and fractional amounts. Halving headroom can silently round large totals. |
+
+The money helpers use local Decimal contexts, preserving the caller's context.
+Precision is calculated from the operands; no arbitrary monetary maximum has
+been introduced. Python Decimal's implementation limits on exponent and available
+memory still apply; this is not an unlimited-resource arithmetic service.
 
 No arbitrary tolerances, interest remainders, FX rates, BHD fee amounts, hold
 timeouts, retry counts, or performance targets are introduced. If a later step
-needs a numeric bound or decimal context precision, document it here before use.
+needs another numeric bound or arithmetic setting, document it here before use.

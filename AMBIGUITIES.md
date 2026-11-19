@@ -130,6 +130,20 @@ postings are appended. Invalid operations append errors without partial money
 movement. This is single-threaded in-memory business atomicity, not durability,
 crash recovery, tamper-proof storage, or concurrent writer support.
 
+Step 2 detail: AccountModel, EventModel, EntryModel, DecisionModel, and the journal
+envelope are frozen dataclasses with scalar fields. Validated money is normalized
+only during record construction, never after appending. Input records preserve
+invalid business values (such as an unknown currency or out-of-window integer
+day) for later service rejection. Invalid field types or mutable payloads fail
+record construction; this typed core does not promise to ingest arbitrary objects.
+The service will distinguish valid record construction from business acceptance.
+
+Every appended record receives a journal sequence, including input attempts and
+decisions. A historical cutoff is inclusive and must refer to an existing sequence
+or zero. A future cutoff is rejected to avoid accidentally claiming future knowledge.
+The data client permits repeated input IDs for audit; financial duplicate handling
+belongs to the service, not an implicit storage deduplication rule.
+
 ## 17. Reporting historical versus final information
 
 Print original daily snapshots and explicit correction checkpoints, then final
