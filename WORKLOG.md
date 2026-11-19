@@ -68,3 +68,30 @@ Git commit. AI-generated code is not evidence that the author has reviewed it.
   files were still untracked. `.venv/bin/python -m pip check`: no broken requirements.
 - Updating README, NUMBERS, and AMBIGUITIES to describe implemented behavior.
 - No commits performed. Step 3 awaits the author's review and commit confirmation.
+
+## Step 3: credits, debits, instalments, and reversals
+
+### 2026-11-19T08:13:48Z — Implementation start
+
+- Author confirmed Step 2 committed; verified commit `1538e3e`.
+- `.idea/` remains untracked user configuration; left untouched.
+- Implementing the first business operations against the real in-memory client.
+
+### 2026-11-19T08:14:59Z — Code verification checkpoint
+
+- Added LedgerService.process_event with audit-first input recording, validation,
+  complete-batch posting, and explicit accepted/rejected outcomes.
+- Added integer-minor-unit instalment allocation without floating point or
+  independently rounded thirds. E10 produces 3.334, 3.333, and 3.333 BHD.
+- Added reference_event_id to postings for linked full reversals. Original
+  postings and snapshots stay unchanged. Full instalment reversals aggregate
+  the original children into one exact opposite posting.
+- Duplicate IDs, rejected-ID retries, invalid amounts/dates, wrong-account
+  references, repeated reversals, and unsupported kinds produce no money movement.
+- Used Decimal.copy_negate rather than unary negation to preserve exact large
+  amounts even when the caller uses a small Decimal context precision.
+- `.venv/bin/python -m pytest tests/src -q`: 112 passed in 0.33 seconds.
+- `git diff --check`: passed for tracked changes at this checkpoint.
+- Updating policy documentation for minimum-size instalments, original-date full
+  reversal, and ordinary debits being allowed to overdraw.
+- No code approach was abandoned during this step. No commits performed.

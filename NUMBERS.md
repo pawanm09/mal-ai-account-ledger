@@ -45,6 +45,8 @@ the table in `README.md`. They identify the scenario, not configurable threshold
 | Decimal quanta 0.01 AED / 0.001 BHD | Derived from required scales. Half a quantum is not a representable stored currency unit. |
 | ROUND_HALF_UP | Explicit, familiar tie rule; exact half units round away from zero. The brief does not prescribe it. ROUND_HALF_EVEN is a valid alternative but must not be mixed into this design. |
 | One minor unit per remainder allocation | Allocate indivisible units to the earliest instalments. Half a minor unit cannot be stored. |
+| Instalment minimum: one minor unit | Reject an allocation that would need zero-value children. Halving the minimum creates an unrepresentable currency amount. |
+| Base 10 for converting integer minor units back to decimal | Currency scales count decimal places; 10 raised to the scale converts units to whole amounts and fractional digits. Base 5 would produce wrong money values. |
 | One-based monotonically increasing recording sequence | Deterministic arrival cutoffs, independent of wall-clock time. Sequence magnitude has no monetary meaning. |
 | One final settlement per authorization | Small lifecycle matching the supplied stream. Multiple partial captures are a documented limitation, not silently approximated. |
 | One final capitalization per account | Matches a single end-of-window credit per currency account; halving an operation count is meaningless. No posting is needed for a zero total. |

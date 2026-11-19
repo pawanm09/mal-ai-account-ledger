@@ -71,3 +71,21 @@ def total_amounts(values: Iterable[Decimal], currency: str) -> Decimal:
 def format_amount(value: str | Decimal, currency: str) -> str:
     """Format a validated amount with its currency and fixed decimal places."""
     return f"{currency} {parse_amount(value, currency):f}"
+
+
+def split_amount(value: str | Decimal, currency: str, count: int) -> tuple[Decimal, ...]:
+    """Split a positive total into positive minor-unit amounts, largest first."""
+    amount = transaction_amount(value, currency)
+    if type(count) is not int or count < 1:
+        raise InvalidRequestException("Instalment count must be a positive integer")
+    scale = -currency_quantum(currency).as_tuple().exponent
+    units = int(format(amount, "f").replace(".", ""))
+    if count > units:
+        raise InvalidRequestException("Each instalment must contain at least one minor unit")
+    base, remainder = divmod(units, count)
+    parts = []
+    for index in range(count):
+        part_units = base + (1 if index < remainder else 0)
+        whole, fraction = divmod(part_units, 10 ** scale)
+        parts.append(Decimal(f"{whole}.{fraction:0{scale}d}"))
+    return tuple(parts)

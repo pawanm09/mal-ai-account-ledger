@@ -17,11 +17,14 @@ class EntryModel:
     value_date: int
     kind: str
     source_event_id: str
+    reference_event_id: str | None = None
 
     def __post_init__(self) -> None:
         validate_text(self.account_id, "Account ID")
         validate_text(self.kind, "Entry kind")
         validate_text(self.source_event_id, "Source event ID")
+        if self.reference_event_id is not None:
+            validate_text(self.reference_event_id, "Reference event ID")
         validate_day(self.value_date)
         object.__setattr__(self, "amount", parse_amount(self.amount, self.currency))
 

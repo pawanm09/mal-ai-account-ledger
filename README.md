@@ -5,11 +5,11 @@ database, or external service calls. Financial state will live only in memory.
 
 ## Current status
 
-Step 2: exact-money helpers, immutable records, append-only storage, and historical
-balance queries are implemented and covered by 64 passing tests. Transaction
-services and replay are not implemented yet. `main.py` and `src/container.py`
-currently contain module descriptions only; running `main.py` does not exercise
-the supplied event stream.
+Step 3: exact money, immutable records, append-only storage, historical queries,
+credits, debits, instalments, and full reversals are implemented, with 112 passing
+tests. Authorizations, settlements, fees, interest, and replay are still pending.
+`main.py` and `src/container.py` currently contain module descriptions only;
+running `main.py` does not exercise the supplied event stream.
 
 ## Setup
 
@@ -31,8 +31,9 @@ python3 -m pytest tests/src -q
 ```
 
 These tests cover exact money, immutable records, independent account balances,
-recording cutoffs, and all-or-nothing batch validation. End-to-end behavior will
-be tested when the services and replay are implemented.
+recording cutoffs, batch validation, transaction acceptance/rejection, duplicate
+attempts, instalment conservation, and reversals. End-to-end behavior will be
+tested when the remaining services and replay are implemented.
 
 ## Structure
 
@@ -76,9 +77,22 @@ is on or before the requested day and whose sequence is within the cutoff.
 
 `append_entries` validates the complete batch before writing any postings. The
 data client validates storage invariants, not business authorization or duplicate
-effects; those checks belong to the upcoming service. It intentionally retains
+effects; those checks belong to the service. It intentionally retains
 duplicate input attempts for audit. Public snapshots cannot mutate storage; the
 private Python attributes are not a security boundary against hostile callers.
+
+### Implemented transaction flow
+
+`LedgerService.process_event` records each input attempt, validates it, builds
+the entire posting batch, appends that batch, and records an ACCEPTED decision.
+Domain validation failures instead append a REJECTED decision with no postings.
+Unexpected programming errors propagate rather than being hidden as rejections.
+
+Credits may allocate instalments; debits may overdraw. A reversal derives the
+full amount from the referenced credit/debit postings and appends one opposite
+posting linked by `reference_event_id`. Original records and decisions remain.
+Duplicate IDs (including previously rejected IDs) and repeated reversals are
+rejected. The service currently supports CREDIT, DEBIT, and REVERSAL only.
 
 ## Required accounts and rules
 

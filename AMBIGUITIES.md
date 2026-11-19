@@ -97,6 +97,12 @@ Divide integer minor units and distribute remaining units in instalment order.
 The first instalment gets 3.334, then 3.333 and 3.333. Validate all postings before
 appending any. Preserve the parent input event and each child posting.
 
+Step 3 detail: every instalment must be positive, so reject counts exceeding the
+number of minor units rather than creating zero-value postings. Only CREDIT
+supports multiple instalments. This is a chosen bounded API contract; the supplied
+E10 satisfies it. Full reversal of an instalment credit creates one compensating
+posting for its complete total, linked to the parent event.
+
 ## 13. BHD overdraft pricing
 
 Only an AED fee is supplied. Do not apply AED 25 as BHD 25 or invent conversion.
@@ -114,6 +120,14 @@ Validate references against the original account and operation. Reject a second
 settlement or second reversal. Supported reversals initially target ordinary
 credit/debit postings; reversal of settlement lifecycles or fee entries is not
 implicitly supported. E7 is a supported ordinary debit.
+
+Step 3 detail: a full reversal must match the original value date and must not
+supply an amount; derive that amount from the original financial postings.
+References to rejected events have no postings to reverse. References across
+accounts, to reversals, or to already-reversed events are rejected. Unrelated
+authorization/reference fields on ordinary postings are rejected rather than
+silently ignored. Ordinary debits may overdraw; the nonnegative-availability
+rule is for authorization requests, not a blanket debit restriction.
 
 ## 15. Dates outside the window
 

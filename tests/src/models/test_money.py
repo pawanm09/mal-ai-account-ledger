@@ -8,6 +8,7 @@ from src.models.money import (
     format_amount,
     parse_amount,
     round_amount,
+    split_amount,
     total_amounts,
     transaction_amount,
 )
@@ -74,3 +75,22 @@ class TestMoney:
         values = [Decimal("3.334"), Decimal("3.333"), Decimal("3.333")]
         assert str(total_amounts(values, "BHD")) == "10.000"
         assert str(total_amounts([Decimal("1.00"), Decimal("-1.00")], "AED")) == "0.00"
+
+    @pytest.mark.parametrize("value,currency,count,expected", [
+        ("10.000", "BHD", 3, ("3.334", "3.333", "3.333")),
+        ("0.05", "AED", 3, ("0.02", "0.02", "0.01")),
+        ("1.00", "AED", 2, ("0.50", "0.50")),
+        ("0.001", "BHD", 1, ("0.001",)),
+        ("0.03", "AED", 3, ("0.01", "0.01", "0.01")),
+    ])
+    def test_instalment_allocation(self, value, currency, count, expected):
+        with localcontext() as context:
+            context.prec = 2
+            parts = split_amount(value, currency, count)
+            assert tuple(str(part) for part in parts) == expected
+            assert total_amounts(parts, currency) == Decimal(value)
+
+    @pytest.mark.parametrize("count", [0, -1, True, 1.5, "3", 101])
+    def test_invalid_instalment_count(self, count):
+        with pytest.raises(InvalidRequestException):
+            split_amount("1.00", "AED", count)
