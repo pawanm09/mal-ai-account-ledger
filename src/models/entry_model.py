@@ -50,8 +50,23 @@ class DecisionModel:
 
 
 @dataclass(frozen=True)
+class ControlModel:
+    """Append-only day-close or window-finalization marker."""
+
+    kind: str
+    day: int
+
+    def __post_init__(self) -> None:
+        validate_day(self.day)
+        if self.kind not in ("DAY_CLOSED", "FINALIZED"):
+            raise InvalidRequestException("Unknown control marker")
+        if self.kind == "FINALIZED" and self.day != 6:
+            raise InvalidRequestException("Finalization must be on Day 6")
+
+
+@dataclass(frozen=True)
 class JournalRecord:
     """Storage-assigned sequence and an immutable event, posting, or decision."""
 
     sequence: int
-    payload: EventModel | EntryModel | DecisionModel
+    payload: EventModel | EntryModel | DecisionModel | ControlModel

@@ -20,6 +20,13 @@ on temporary intraday overdrafts. At end of input, close through Day 6.
 For this stream: close Day 4 before E7; after E7 reassess Days 2–4; close Day 5
 before E9; process E10 while the processing day remains 6; finalize afterward.
 
+Step 5 implementation: DailyCloseService.process_event is the coordinated replay
+entry point. LedgerService.process_event handles individual operations; calling
+it alone does not close days. Explicit close markers also advance the processing
+day used for authorization. Reconciliation scans all closed days (at most six)
+instead of maintaining a potentially stale affected-day cache. Closed-day markers
+preserve original boundaries while later reassessment can append fees or errors.
+
 ## 3. Historical fee assessment and dating
 
 The phrase "day assessed" does not explicitly define late discovery. Interpret
@@ -101,6 +108,13 @@ Post one credit per account for a positive total with value date 6. A zero total
 needs no financial entry. Repeated finalization must not post twice. Reject new
 events after finalization; reopening a capitalized window is outside this design.
 
+DailyCloseService.daily_accruals returns a six-day projection at the requested
+recording cutoff, even before all days close; only finalization makes it final.
+INTEREST postings are excluded from the basis, keeping repeated queries consistent
+with the capitalization total. Finalization state is an append-only control marker,
+not a boolean that disappears when a service instance is reconstructed. Late input
+attempts after that marker remain audited with REJECTED decisions and no postings.
+
 ## 11. Rounding and excess input precision
 
 Use Decimal from text, never binary floating point. Use ROUND_HALF_UP at the
@@ -128,6 +142,15 @@ Only an AED fee is supplied. Do not apply AED 25 as BHD 25 or invent conversion.
 If a BHD negative close is encountered, report an unsupported-fee-policy error
 and do not silently claim a completed fee assessment. The supplied BHD stream
 never goes negative. General multi-currency overdraft pricing is unsupported.
+
+Step 5 implementation: an unsupported negative close appends a FEE_ERROR identifying
+account and assessment day, once for that account/day. It returns an incomplete
+close/finalization result, with no FINALIZED marker or interest capitalization.
+Input processing continues to permit a correcting reversal. Earlier fee-error
+records remain even if a correction resolves the condition; finalization's result
+reports whether the current condition is resolved. No cross-account transaction
+rollback is promised for closing: supported AED fees may already have been booked
+while another account's pricing remains unresolved.
 
 ## 14. Duplicates, identity, and invalid events
 

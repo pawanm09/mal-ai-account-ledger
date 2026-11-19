@@ -123,3 +123,32 @@ Git commit. AI-generated code is not evidence that the author has reviewed it.
 - Updated README and AMBIGUITIES with implemented lifecycle and ID reuse policy.
 - No implementation approach abandoned, no commits performed. Step 5 awaits
   the author's review and commit confirmation.
+
+## Step 5: daily closing, fees, and interest
+
+### 2026-11-19T08:52:08Z — Implementation start
+
+- Author confirmed Step 4 committed; verified commit `6caaf70`.
+- `.idea/` remains untracked user configuration and is untouched.
+- Implementing explicit day close, chronological historical assessment, exact
+  daily accruals, once-only capitalization, and post-finalization rejection.
+
+### 2026-11-19T08:53:41Z — Code verification checkpoint
+
+- Added DailyCloseService with coordinated event processing, close/reconcile,
+  provisional accrual queries, and finalization.
+- Added immutable DAY_CLOSED and FINALIZED journal markers. Reconstructed service
+  instances preserve fee and interest idempotence without separate mutable flags.
+- Added unsupported-BHD-fee errors that block finalization but permit correcting
+  input; repeated checks do not duplicate the same account/day error.
+- Tests exercise E1–E10 in supplied order, including E10 after E9: fees AED 75.00,
+  final balances AED 390.93 and BHD 10.008, exact rounded interest capitalization.
+- Tested intraday overdrafts, zero closes, fee carry-forward, no interest on
+  nonpositive balances, no hold deduction from interest base, no self-interest,
+  reconstruction/retry idempotence, historical cutoff projections, and late input.
+- `.venv/bin/python -m pytest tests/src -q`: 172 passed in 0.18 seconds.
+- `git diff --check`: passed for tracked changes at this checkpoint.
+- Updated policy docs and rejection evidence to distinguish verified financial
+  tests from the still-pending runnable reporting script.
+- No implementation approach abandoned and no commits performed. Step 6 awaits
+  the author's review and commit confirmation.

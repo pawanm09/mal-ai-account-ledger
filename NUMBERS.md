@@ -53,6 +53,9 @@ the table in `README.md`. They identify the scenario, not configurable threshold
 | Cutoff zero | Query opening balances before any journal records. Negative cutoffs are invalid; this is an identity boundary, not a tunable constant. |
 | Quantization precision: integer digits + currency scale + one carry digit | Derived per calculation rather than relying on Decimal's default significant-digit limit. The extra digit permits 99.999 to become 100.00. Halving precision can lose money or raise an arithmetic error. |
 | Sum precision: largest integer width + scale + digits in count | Derived headroom for summing the batch without dropping minor units. At least one integer digit handles zero and fractional amounts. Halving headroom can silently round large totals. |
+| Interest multiplication precision: balance coefficient digits + rate coefficient digits | Multiplication needs at most the sum of operand digit counts before explicit currency rounding. Halving it risks rounding the intermediate product first. |
+| Closed-day sentinel 0 | No day closed yet; actual days remain 1 through 6. This is a state boundary, not a financial input. |
+| Reconciliation scans at most six days | The supplied window is tiny; scanning avoids an invalidation cache and catches fee effects on later days. Three days would miss required history. |
 
 The money helpers use local Decimal contexts, preserving the caller's context.
 Precision is calculated from the operands; no arbitrary monetary maximum has

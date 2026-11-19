@@ -48,6 +48,8 @@ class LedgerService:
         return decision
 
     def _validate_event(self, event: EventModel, cutoff: int) -> None:
+        if any(marker.kind == "FINALIZED" for marker in self.ledger_data_client.get_controls()):
+            raise InvalidRequestException("Window is finalized; new events are rejected")
         validate_text(event.event_id, "Event ID")
         for record in self.ledger_data_client.get_events(cutoff):
             if record.payload.event_id == event.event_id:
@@ -149,6 +151,8 @@ class LedgerService:
         # Valid booked days advance time even if a request is declined/rejected.
         days = [record.payload.booked_day for record in self.ledger_data_client.get_events()
                 if 1 <= record.payload.booked_day <= 6]
+        days.extend(min(marker.day + 1, 6) for marker in self.ledger_data_client.get_controls()
+                    if marker.kind == "DAY_CLOSED")
         return max(days, default=1)
 
     def _authorize(self, event: EventModel) -> DecisionModel:

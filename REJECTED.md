@@ -1,7 +1,19 @@
 # Acceptance review and rejected approaches
 
-Initial design review; implementation evidence will be added as tests arrive.
+Implementation through Step 5 now verifies the financial scenario and policies.
 Distinguish contradictions in arithmetic from decisions under an ambiguous policy.
+
+## Current evidence
+
+- `tests/src/services/test_daily_close_service.py` verifies the pre-fee Day 2
+  amount, fee days 2/4/5, retained fees after E9, Auth-A/unknown-settlement outcomes,
+  declined Auth-B, exact daily-accrual sums, and final AED/BHD balances.
+- `tests/src/services/test_authorizations.py` separately verifies approved,
+  unsettled holds because Auth-B is declined in the supplied scenario.
+- `tests/src/services/test_ledger_service.py` verifies the three conserving BHD
+  instalments and immutable reversal behavior.
+- The rounded-accrual test uses AED 12.50: each daily 0.005 accrual rounds to 0.01,
+  totaling 0.06; rounding the unrounded six-day sum would instead give 0.03.
 
 ## All eight acceptance criteria
 

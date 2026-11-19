@@ -5,9 +5,10 @@ database, or external service calls. Financial state will live only in memory.
 
 ## Current status
 
-Step 4: exact money, immutable records, append-only storage, historical queries,
-postings, reversals, authorizations, and settlements are implemented, with 151
-passing tests. Daily closing, fees, interest, and the supplied replay are pending.
+Step 5: the ledger, authorizations, daily closing, historical fees, interest, and
+finalization are implemented, with 172 passing tests. Tests exercise the complete
+supplied event stream. The runnable reporting script and deliberate failing test
+are still pending.
 `main.py` and `src/container.py` currently contain module descriptions only;
 running `main.py` does not exercise the supplied event stream.
 
@@ -120,6 +121,36 @@ rejected. Approved holds do not expire automatically. Backdated postings do not
 rewrite past approvals or declines. Partial captures remain a documented design
 limitation; the explicit failing demonstration will be added in Step 7.
 
+### Daily processing and finalization
+
+Use `DailyCloseService.process_event` for chronological replay. It coordinates:
+
+```text
+Arrival -> close preceding days -> LedgerService.process_event
+                                        |
+                                        +-> accepted posting: reassess closed days
+
+End of input -> close Day 6 -> sum rounded daily accruals
+                                  -> interest credits -> FINALIZED marker
+```
+
+`close_through(day)` and `reconcile()` assess fees chronologically, including
+earlier fees in later balances. Fees are identified by account and effective day
+and never refunded automatically. DAY_CLOSED markers and FINALIZED are append-only
+records; reconstructing services over the same journal preserves idempotence.
+The current day is not assessed after every input, avoiding intraday fees.
+
+`daily_accruals` returns six provisional daily amounts at a recording cutoff;
+before finalization this includes a projection for days not yet closed. The final
+calculation includes all input and fees but excludes INTEREST postings, avoiding
+self-interest after capitalization. `finalize()` returns True on success, including
+a repeated call, and False if a fee policy is missing. In the latter case the
+journal contains FEE_ERROR records and corrections can still be submitted.
+
+After FINALIZED, attempts submitted through either service are recorded and
+rejected without financial effects. Direct data-client methods are internal
+storage primitives, not an alternative business entry point.
+
 ## Required accounts and rules
 
 - ACC-001: AED, opening balance 0.00; ACC-002: BHD, opening balance 0.000.
@@ -172,7 +203,7 @@ holds, available balance, errors, and interest. Reports will label their recordi
 cutoff and distinguish original snapshots from historical corrections and final
 restated balances. No silent replacement of earlier reports.
 
-## Expected results, not yet implementation-verified
+## Verified financial results (Step 5 tests)
 
 Under the policies chosen in `AMBIGUITIES.md`:
 

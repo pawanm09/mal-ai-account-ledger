@@ -3,7 +3,7 @@ from typing import Iterable
 
 from src.exceptions.invalid_request_exception import InvalidRequestException
 from src.models.account_model import AccountModel
-from src.models.entry_model import DecisionModel, EntryModel, JournalRecord
+from src.models.entry_model import ControlModel, DecisionModel, EntryModel, JournalRecord
 from src.models.event_model import EventModel
 from src.models.money import total_amounts
 from src.models.validation import validate_day
@@ -37,7 +37,7 @@ class LedgerDataClient:
             raise InvalidRequestException("Unknown account")
         return self._accounts[account_id]
 
-    def _append(self, payload: EventModel | EntryModel | DecisionModel) -> JournalRecord:
+    def _append(self, payload: EventModel | EntryModel | DecisionModel | ControlModel) -> JournalRecord:
         record = JournalRecord(self.last_sequence + 1, payload)
         self._records.append(record)
         return record
@@ -57,6 +57,17 @@ class LedgerDataClient:
         if not isinstance(decision, DecisionModel):
             raise InvalidRequestException("Expected a decision record")
         return self._append(decision)
+
+    def record_control(self, control: ControlModel) -> JournalRecord:
+        """Append an explicit closing/finalization boundary."""
+        if not isinstance(control, ControlModel):
+            raise InvalidRequestException("Expected a control marker")
+        return self._append(control)
+
+    def get_controls(self) -> tuple[ControlModel, ...]:
+        """Return immutable closing/finalization markers in recording order."""
+        return tuple(record.payload for record in self._records
+                     if isinstance(record.payload, ControlModel))
 
     def append_entries(self, entries: Iterable[EntryModel]) -> tuple[JournalRecord, ...]:
         """Validate an entire posting batch before appending any of its entries."""
