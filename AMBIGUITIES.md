@@ -192,7 +192,7 @@ only during record construction, never after appending. Input records preserve
 invalid business values (such as an unknown currency or out-of-window integer
 day) for later service rejection. Invalid field types or mutable payloads fail
 record construction; this typed core does not promise to ingest arbitrary objects.
-The service will distinguish valid record construction from business acceptance.
+The service distinguishes valid record construction from business acceptance.
 
 Every appended record receives a journal sequence, including input attempts and
 decisions. A historical cutoff is inclusive and must refer to an existing sequence
@@ -212,11 +212,13 @@ retained. Do not present an error's booked date as its arrival position.
 Keep passing behavioral tests separate from one visible, deliberately failing
 partial-settlement test. Do not mark it xfail, skip it secretly, or disguise an
 import error as the required failure. Default full discovery includes it. The
-README will give both passing-suite and deliberate-failure commands.
+README gives both passing-suite and deliberate-failure commands. The failure
+probes a partial-capture contract which the chosen final-settlement lifecycle
+does not support; it does not assert that the original brief required partial capture.
 
 ## 19. Repository history and genuine worklog
 
-The author will create and commit the repository after reviewing each stage.
+The author created the repository and commits after reviewing each stage.
 AI will not commit, squash, backdate, or fabricate time spent. Document real
 implementation timestamps and distinguish design alternatives from approaches
 actually abandoned during implementation.

@@ -180,3 +180,34 @@ Git commit. AI-generated code is not evidence that the author has reviewed it.
   timeout in NUMBERS.md. Intentional failing test is still scheduled for Step 7.
 - No implementation approach abandoned, no commits performed. Awaiting the author's
   review and commit confirmation before Step 7.
+
+## Step 7: required failure and final documentation
+
+### 2026-11-19T09:26:43Z — Implementation start
+
+- Author confirmed Step 6 committed; verified commit `954734c`.
+- Verified six distinct local implementation-stage commits remain in history.
+- `.idea/` remains untracked user configuration; left untouched.
+- Adding the planned inline-annotated partial-settlement failure and reviewing
+  required documents for obsolete future-tense claims and missing tradeoffs.
+
+### 2026-11-19T09:28:27Z — Final verification checkpoint
+
+- Added test_partial_settlement_preserves_uncaptured_hold with successful setup
+  and ledger assertions, followed by the intentional remaining-hold assertion.
+- `.venv/bin/python -m pytest tests/src tests/test_replay.py -q`: 178 passed in
+  0.38 seconds. Includes executing main.py as a subprocess and validating totals.
+- `.venv/bin/python -m pytest tests/design_limitations -q`: exactly 1 failed in
+  0.03 seconds. Failure at the intended assertion: actual Decimal('0.00') versus
+  expected Decimal('100.00'), not an import, setup, or posting failure.
+- `.venv/bin/python -m pytest -q`: exactly 1 failed, 178 passed in 0.37 seconds.
+  The only failure is the same annotated limitation test, not skipped or xfailed.
+- `.venv/bin/python -m pip check`: no broken requirements.
+- `git diff --check`: passed for tracked changes during final verification.
+- Updated all required documentation: runnable commands and expected exit status,
+  architecture and limits, rejection evidence, constants and test fixtures,
+  dependency-pinning limits, and a defense walkthrough.
+- Explicitly recorded that no implementation approach was built then abandoned;
+  pre-build design alternatives are not misrepresented as implementation detours.
+- No commits made by AI. Awaiting the author's final independent review, test run,
+  and Step 7 commit. Test timings are observed tool results, not human work duration.

@@ -1,6 +1,6 @@
 # Acceptance review and rejected approaches
 
-Implementation through Step 6 verifies the financial scenario, policies, and output.
+Implementation verifies the financial scenario, policies, and output.
 Distinguish contradictions in arithmetic from decisions under an ambiguous policy.
 
 ## Current evidence
@@ -57,7 +57,7 @@ a possible alternative policy, not a requirement stated by the non-negotiable ru
 ### 5. An approved Auth-B reduces available balance, not ledger balance
 
 **Accept.** Holds reserve availability only. Auth-B is actually declined in this
-stream. A separate approved-unsettled-hold test will verify the conditional claim.
+stream. A separate approved-unsettled-hold test verifies the conditional claim.
 
 ### 6. E9 restores all balances and fees to their pre-E7 values
 
@@ -93,5 +93,17 @@ These were design discussions, not code that was built and subsequently removed.
 
 ## Approaches abandoned during implementation
 
-None so far. Update this section with actual evidence if an implementation approach
-is tried and abandoned. Do not invent a false start to satisfy the deliverable.
+None. No implemented financial approach was built and then discarded during this
+session. The alternatives above were rejected during design. Reporting them as
+mid-build rewrites would fabricate development history. This section intentionally
+records that fact rather than manufacturing a detour to satisfy the wording.
+
+## Failing test against this design
+
+`tests/design_limitations/test_partial_settlement.py` deliberately fails because
+a settlement for AED 100 releases the whole AED 200 hold. It expects AED 100 to
+remain reserved under partial-capture semantics; actual active holds are AED 0.
+The inline annotation explains what this reveals: treating every settlement as
+final can prematurely release funds if the caller actually intended a partial
+capture. Supporting that use case requires explicit capture completeness and
+remaining-hold state, not changing rounding or ignoring the assertion.

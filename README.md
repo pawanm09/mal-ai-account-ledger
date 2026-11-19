@@ -1,17 +1,18 @@
 # In-memory account ledger
 
 A six-day, Python 3 account-ledger assessment. No web layer, persistence, UI,
-database, or external service calls. Financial state will live only in memory.
+database, or external service calls. Financial state lives only in memory.
 
 ## Current status
 
-Step 6: the complete supplied replay and daily reporting run with `python3 main.py`.
-All 178 correctness tests pass, including a subprocess test of that command.
-The deliberate failing test and final documentation review remain for Step 7.
+The complete supplied replay and daily reporting run with `python3 main.py`.
+The correctness suite contains 178 passing tests, including a subprocess test of
+that command. One additional, deliberately failing test demonstrates the
+partial-settlement limitation. Full discovery includes that failure.
 
 ## Setup
 
-Use Python 3.11 or newer. The verified interpreter version will be recorded in
+Use Python 3.11 or newer. The verified interpreter version is recorded in
 `WORKLOG.md`. Run from the repository root:
 
 ```bash
@@ -47,13 +48,14 @@ src/externals/clients/         in-memory append/query storage
 src/services/                 ledger operations and daily closing
 tests/src/                    tests mirroring the source packages
 tests/test_replay.py           whole-stream and runnable-script tests
-tests/design_limitations/      deliberate failing test (Step 7)
+tests/design_limitations/      deliberate failing partial-settlement test
 ```
 
-`externals/clients` matches the reference name; it will contain an in-memory
-client, not a network integration. There will be two services, `LedgerService`
-and `DailyCloseService`, wired by constructors. Ordinary functions in `main.py`
-will coordinate the replay. Tests will use real in-memory clients.
+`externals/clients` matches the reference name and contains an in-memory client.
+The two services, `LedgerService` and `DailyCloseService`, are wired by constructors.
+Ordinary functions in `main.py` coordinate the replay. Tests use real in-memory
+clients without mocks. `create_ledger()` constructs fresh dependencies, rather
+than sharing the reference project's module-level mutable service instance.
 
 ### Implemented storage model
 
@@ -117,7 +119,7 @@ Auth-A's AED 185 settlement releases the full AED 200 hold, leaving no implicit
 AED 15 hold. Unknown, declined, already-settled, or over-limit settlements are
 rejected. Approved holds do not expire automatically. Backdated postings do not
 rewrite past approvals or declines. Partial captures remain a documented design
-limitation; the explicit failing demonstration will be added in Step 7.
+limitation, demonstrated by `tests/design_limitations/test_partial_settlement.py`.
 
 ### Daily processing and finalization
 
@@ -190,9 +192,27 @@ python3 main.py
 python3 -m pytest tests/src tests/test_replay.py
 ```
 
-The deliberate failure will be added in Step 7. Its separate command will be
-`python3 -m pytest tests/design_limitations`; default full discovery will include
-it as well. At Step 6 there is no deliberately failing test yet.
+### Required deliberate failure
+
+```bash
+# Expected: 1 failed, exit status 1
+python3 -m pytest tests/design_limitations -q
+
+# Expected: 1 failed, 178 passed, exit status 1
+python3 -m pytest -q
+```
+
+`test_partial_settlement_preserves_uncaptured_hold` credits AED 250, authorizes
+AED 200, then settles AED 100. Its final assertion expects AED 100 to remain
+held, while the implementation returns AED 0 because settlement is final.
+The preceding acceptance and ledger-balance assertions pass. The inline comment
+explains the design consequence and what partial-capture support would require.
+This test is not skipped or marked xfail. Its expectation probes a deliberately
+unsupported alternative contract, not a claim that the supplied stream requires it.
+
+The correctness-suite command above explicitly selects only passing tests; nothing
+is hidden from default discovery. Do not treat the documented full-suite exit code
+as an unexplained regression or claim the entire suite is green.
 
 ### Read the output
 
@@ -254,3 +274,53 @@ Under the policies chosen in `AMBIGUITIES.md`:
 After every step, the author reviews the code, runs checks, and makes a real
 local commit before the next step. Preserve history without squashing. AI
 assistance is disclosed in `WORKLOG.md`; no history or timestamps are fabricated.
+
+## Design boundaries and tradeoffs
+
+- Single-threaded, bounded replay. No concurrency protection, crash recovery,
+  persistence, or reopening after finalization.
+- The journal is append-only through the public core APIs. Python private fields
+  are an interface convention, not a tamper-proof security boundary.
+- Monetary values use decimal strings and explicit precision, with integer minor
+  units for splits. Local decimal precision protects calculations from ordinary
+  caller precision changes; arbitrary hostile Decimal traps/exponent settings and
+  unbounded input sizes are not a supported environment.
+- Only AED overdraft pricing is supplied. A negative BHD close records FEE_ERROR
+  and blocks finalization until corrected; no invented BHD fee or FX rate.
+- Settlements are final and cannot exceed their approved holds. Partial capture,
+  automatic hold expiry, forced settlement, and settlement reversal are unsupported.
+- Fee refunds are not automatic. Retaining them is an explicit business policy,
+  not a consequence of append-only storage. Compensating refunds are possible
+  in an extended design.
+- Historical fee dating is an explicit interpretation of an ambiguous rule.
+  Assessment day and recording sequence are distinct. See `AMBIGUITIES.md` before
+  interpreting the rejection of criterion 2 as universal banking behavior.
+- Direct data-client methods are trusted storage primitives. Call the coordinated
+  service for replay, rather than injecting fabricated outcomes or control markers.
+- The runner is for the supplied typed scenario, not an arbitrary external-input
+  parser. Its identifiers are synthetic assessment data printed as required.
+
+Scans favor clarity over indexes. A balance or authorization query scans the
+journal; daily reconciliation scans up to six days per account, and reporting
+repeats these queries. Cumulative replay can be quadratic in journal size. This
+is appropriate for ten inputs; a large ledger would need indexed projections
+with explicit consistency and historical-version rules. Storage grows with every
+input, posting, decision, and marker, including rejected attempts.
+
+## Defense walkthrough
+
+1. Follow `main.py` -> `create_ledger()` -> coordinated service -> journal.
+2. Explain booked day, value date, and recording cutoff using late E10.
+3. Show the Day 2 snapshot changing from 250.00 to -395.00 after E7, with the
+   pre-fee principal balance -370.00 and the original snapshot still accessible.
+4. Trace fee carry-forward: Day 3 remains 5.00; Days 4 and 5 incur further fees.
+5. Explain E9 as an opposite principal posting, with retained fees and unchanged
+   historical authorization decisions.
+6. Show BHD remainder allocation and why daily rounded interest, not a rounded
+   unrounded aggregate, is capitalized.
+7. Run the intentional failure and describe the lifecycle needed for partial capture.
+
+`REJECTED.md` contains all eight criterion dispositions and distinguishes genuine
+arithmetic contradictions from policy-dependent refusals. `NUMBERS.md` separates
+supplied constants from implementation choices. `WORKLOG.md` records observed work,
+not an estimate of human review time.

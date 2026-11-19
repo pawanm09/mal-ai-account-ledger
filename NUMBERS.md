@@ -1,6 +1,6 @@
 # Numbers and constants
 
-Initial design inventory. Add implementation constants as they are introduced.
+Inventory of supplied numbers and constants introduced through implementation.
 Supplied requirements are not tuning parameters. Expected results are derived
 values to assert in tests, not constants to hard-code in financial calculations.
 
@@ -63,6 +63,28 @@ Precision is calculated from the operands; no arbitrary monetary maximum has
 been introduced. Python Decimal's implementation limits on exponent and available
 memory still apply; this is not an unlimited-resource arithmetic service.
 
-No arbitrary tolerances, interest remainders, FX rates, BHD fee amounts, hold
-timeouts, retry counts, or performance targets are introduced. If a later step
-needs another numeric bound or arithmetic setting, document it here before use.
+No arbitrary tolerances, discarded interest remainders, FX rates, BHD fee amounts,
+hold timeouts, retry counts, or runtime performance targets are introduced.
+
+## Test fixtures and derived numbers
+
+Test-only values are examples, not runtime policy. Important choices:
+
+- AED 250 available, AED 200 hold, AED 100 capture: leaves an obvious AED 100
+  uncaptured amount in the deliberate limitation test. Halving all three amounts
+  still demonstrates the same unsupported lifecycle, so these magnitudes are not
+  correctness requirements.
+- AED 12.50: 0.04% produces the exact half-minor-unit accrual 0.005. Halving it
+  gives 0.0025 and loses the tie-rounding demonstration.
+- One minor unit above/below a boundary tests the smallest representable change;
+  half a unit cannot be stored. Zero, negative, non-finite, and out-of-window
+  values exercise validation, not additional business constants.
+- Decimal contexts with precision 2 or 3 deliberately stress exact arithmetic.
+  Very large amounts exceed default precision to expose hidden intermediate
+  rounding. Their exact magnitudes are fixtures, not a supported account limit.
+- Expected fees (75.00), interest (0.93/0.008), final balances (390.93/10.008),
+  test counts, and journal cutoffs are derived results. They are never substituted
+  for calculations in the core. Test expectations are independently specified.
+
+Only pytest's direct version is pinned in requirements.txt; resolved transitive
+versions are recorded in WORKLOG.md. This is not a fully locked or hashed build.
